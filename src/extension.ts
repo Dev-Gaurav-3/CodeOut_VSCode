@@ -1,0 +1,252 @@
+// The module 'vscode' contains the VS Code extensibility API
+// Import the module and reference it with the alias vscode in your code below
+import * as vscode from 'vscode';
+import WebSocket from "ws";
+import { CodeOutViewProvider } from "./codeOutViewProvider";
+
+// This method is called when your extension is activated
+// Your extension is activated the very first time the command is executed
+
+type TestCase = {
+    input: string;
+    expectedOutput?: string;
+};
+
+export function activate(context: vscode.ExtensionContext) {
+	
+	// Use the console to output diagnostic information (console.log) and errors (console.error)
+	// This line of code will only be executed once when your extension is activated
+	// console.log('Congratulations, your extension "codeout" is now active!');
+	console.log("🚀 CODEOUT NEW VERSION LOADED");
+	
+	console.log("🔥 CodeOut WebviewView REGISTERED 🔥");
+	
+	const uriHandler = vscode.window.registerUriHandler({
+		async handleUri(uri: vscode.Uri) {
+			console.log("🔥 URI HANDLER ACTIVATED");
+			console.log("CodeOut received:", uri.toString());
+			const params = new URLSearchParams(uri.query);
+			const slug = params.get("slug");
+			console.log("Slug Received: ",slug);
+			console.log("Raw query:", uri.query);
+			vscode.window.showInformationMessage(
+				`CodeOut received: ${uri.toString()}`
+			);
+			
+			const workspace = vscode.workspace.workspaceFolders;
+			const workspaceUri = workspace?.[0]?.uri;
+			if (workspaceUri) {
+				const fileUri = vscode.Uri.joinPath(
+					workspaceUri,
+					"longest-palindromic-substring.cpp"
+				);
+				console.log("File URI:", fileUri);
+			}
+		}
+	});
+	
+	const socket = new WebSocket("ws://localhost:3000");
+	const codeOutViewProvider = new CodeOutViewProvider(
+		context.extensionUri,
+		socket
+	);
+	
+	context.subscriptions.push(
+		vscode.window.registerWebviewViewProvider(
+			CodeOutViewProvider.viewType,
+			codeOutViewProvider
+		)
+	);
+	socket.on("open", () => {
+		console.log("Connected to CodeOut server!");
+	});
+
+	socket.on("message", async (message) => {
+		console.log("🔥 MESSAGE RECEIVED FROM SERVER");
+		console.log("Raw message:", message.toString());
+		const problem = JSON.parse(message.toString());
+		codeOutViewProvider.setProblem(problem);
+		console.log("Parsed problem:", problem);
+
+		const language = await vscode.window.showQuickPick(
+			[
+				"C++",
+				"Java",
+				"Python3",
+				"Python",
+				"JavaScript",
+				"TypeScript",
+				"C#",
+				"C",
+				"Go",
+				"Kotlin",
+				"Swift",
+				"Rust",
+				"Ruby",
+				"PHP",
+				"Dart",
+				"Scala",
+				"Elixir",
+				"Erlang",
+				"Racket"
+			],
+			{
+				placeHolder: "Select the language you want to use"
+			}
+		);
+
+		if (!language) {
+			return;
+		}
+
+		await vscode.commands.executeCommand(
+			"workbench.view.extension.codeout"
+		);
+
+		const snippet = problem.codeSnippets.find(
+			(snippet: any) => snippet.lang === language
+		);
+		console.log("Selected snippet:", snippet);
+		console.log("Selected language:", language);
+
+		if (!snippet) {
+			vscode.window.showErrorMessage(
+				`No code snippet found for ${language}`
+			);
+			return;
+		}
+
+		const workspaceUri =
+			vscode.workspace.workspaceFolders?.[0]?.uri;
+
+		if (!workspaceUri) {
+			vscode.window.showErrorMessage(
+				"Please open a workspace folder first."
+			);
+			return;
+		}
+
+		const extensionMap: Record<string, string> = {
+			"C++": ".cpp",
+			"Java": ".java",
+			"Python3": ".py",
+			"Python": ".py",
+			"JavaScript": ".js",
+			"TypeScript": ".ts",
+			"C#": ".cs",
+			"C": ".c",
+			"Go": ".go",
+			"Kotlin": ".kt",
+			"Swift": ".swift",
+			"Rust": ".rs",
+			"Ruby": ".rb",
+			"PHP": ".php",
+			"Dart": ".dart",
+			"Scala": ".scala",
+			"Elixir": ".ex",
+			"Erlang": ".erl",
+			"Racket": ".rkt"
+		};
+
+		const fileExtension = extensionMap[language];
+
+		const fileUri = vscode.Uri.joinPath(
+			workspaceUri,
+			`${problem.slug}${fileExtension}`
+		);
+
+		try {
+			await vscode.workspace.fs.writeFile(
+				fileUri,
+				Buffer.from(snippet.code, "utf8")
+			);
+
+			console.log("File created:", fileUri.fsPath);
+			const document = await vscode.workspace.openTextDocument(fileUri);
+			await vscode.window.showTextDocument(document);
+
+		} catch (error) {
+			console.error("Failed to create/open file:", error);
+
+			vscode.window.showErrorMessage(
+				"Failed to create CodeOut file."
+			);
+		}
+		console.log("Testcases:", problem.testcases);
+	});
+	socket.on("error", (error) => {
+		console.error("WebSocket error:", error);
+	});
+
+	socket.on("close", () => {
+		console.log("Disconnected from CodeOut server");
+	});
+	
+	context.subscriptions.push(uriHandler);
+	
+	const testUriCommand = vscode.commands.registerCommand(
+		'codeout.testUri',
+		async () => {
+			
+			const uri = vscode.Uri.parse("codeout://problem?slug=two-sum");
+			vscode.window.showInformationMessage(
+				`Test URI: ${uri.toString()}`
+			);
+			
+			console.log("Test URI:", uri.toString());
+			console.log(uri.scheme);
+			console.log(uri.path);
+			console.log(uri.query);
+
+		}
+	);
+
+	context.subscriptions.push(testUriCommand);
+
+	// The command has been defined in the package.json file
+	// Now provide the implementation of the command with registerCommand
+	// The commandId parameter must match the command field in package.json
+	const disposable = vscode.commands.registerCommand('codeout.helloWorld', async () => {
+		// The code you place here will be executed every time your command is executed
+		// Display a message box to the user
+		const language = await vscode.window.showQuickPick(
+    [
+        "C++",
+        "Java",
+        "Python3",
+        "Python",
+        "JavaScript",
+        "TypeScript",
+        "C#",
+        "C",
+        "Go",
+        "Kotlin",
+        "Swift",
+        "Rust",
+        "Ruby",
+        "PHP",
+        "Dart",
+        "Scala",
+        "Elixir",
+        "Erlang",
+        "Racket"
+    ],
+    {
+        placeHolder: "Select the language you want to use"
+    }
+);
+
+	if (!language) {
+		return;
+	}
+
+	vscode.window.showInformationMessage(
+		`You selected ${language}`
+	);
+	});
+
+	context.subscriptions.push(disposable);
+}
+
+// This method is called when your extension is deactivated
+export function deactivate() {}
