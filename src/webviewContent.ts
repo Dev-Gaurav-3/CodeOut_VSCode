@@ -39,60 +39,172 @@ function getStatusIcon(status: "pending" | "pass" | "fail"): string {
 export function getWebviewContent(
     webview: vscode.Webview,
     extensionUri: vscode.Uri,
-    problem: Problem
+    problem: Problem,
+    testResults?: {
+        case: string;
+        status: string;
+        output: string;
+    }[]
 ): string {
     const nonce = getNonce();
     const codiconUri = webview.asWebviewUri(
         vscode.Uri.joinPath(extensionUri, "node_modules", "@vscode", "codicons", "dist", "codicon.css")
     );
 
-    const difficultyClass = problem.difficulty.toLowerCase();
+    const difficulty = problem.difficulty ?? "Unknown";
+    const difficultyClass = difficulty.toLowerCase();
     const idLabel = problem.questionFrontendId ? `${escapeHtml(problem.questionFrontendId)}. ` : "";
     const total = problem.testcases.length;
 
-    const casesHtml = problem.testcases
-        .map((testcase, index) => {
-            const input = escapeHtml(testcase.input);
-            const expected = escapeHtml(testcase.expectedOutput ?? "Not available");
-            const status = "pending";
-            const statusLabel = "Ready";
+const casesHtml = problem.testcases
+    .map((testcase, index) => {
 
-            return `
-                <div class="case status-${status}">
-                    <button class="case-header" type="button" aria-expanded="true">
-                        <span class="case-header-left">
-                            <i class="codicon codicon-chevron-down"></i>
-                            <span class="case-label">Test Case ${index + 1}</span>
+        const input = escapeHtml(testcase.input);
+
+        const expected = escapeHtml(
+            testcase.expectedOutput ?? "Not available"
+        );
+
+        const testResult = testResults?.[index];
+
+        const resultStatus = testResult?.status;
+        const actualOutput = testResult?.output ?? "";
+
+        const isRunning = resultStatus === "RUNNING";
+        const isAccepted = resultStatus === "Accepted";
+
+        const isWrongAnswer =
+            resultStatus === "Wrong Answer" ||
+            resultStatus === "Runtime Error" ||
+            resultStatus === "Compile Error";
+
+        let status: "pending" | "pass" | "fail" = "pending";
+        let statusLabel = "READY";
+
+        if (isRunning) {
+            statusLabel = "RUNNING";
+        }
+        else if (isAccepted) {
+            status = "pass";
+            statusLabel = "ACCEPTED";
+        }
+        else if (isWrongAnswer) {
+            status = "fail";
+
+            if (resultStatus === "Wrong Answer") {
+                statusLabel = "WRONG ANSWER";
+            }
+            else {
+                statusLabel = resultStatus!.toUpperCase();
+            }
+        }
+
+        // Accepted cases automatically collapse.
+        // Wrong Answer cases stay expanded.
+        const collapsed = isAccepted ? "collapsed" : "";
+
+        return `
+            <div class="case status-${status} ${collapsed}">
+
+                <button
+                    class="case-header"
+                    type="button"
+                    aria-expanded="${isAccepted ? "false" : "true"}"
+                >
+
+                    <span class="case-header-left">
+
+                        <i class="codicon codicon-chevron-down"></i>
+
+                        <span class="case-label">
+                            Test Case ${index + 1}
                         </span>
-                        <span class="status-chip">
-                            <i class="codicon ${getStatusIcon(status)}"></i>
-                            ${statusLabel}
-                        </span>
-                    </button>
-                    <div class="case-body">
-                        <div class="field">
-                            <div class="field-label">
-                                <span>Input</span>
-                                <button class="copy-btn" type="button" data-copy="${input}" title="Copy input">
-                                    <i class="codicon codicon-copy"></i>
-                                </button>
-                            </div>
-                            <pre>${input}</pre>
+
+                    </span>
+
+                    <span class="status-chip">
+
+                        ${
+                            isRunning
+                                ? `<span class="loader"></span>`
+                                : `<i class="codicon ${getStatusIcon(status)}"></i>`
+                        }
+
+                        ${statusLabel}
+
+                    </span>
+
+                </button>
+
+                <div class="case-body">
+
+                    <div class="field">
+
+                        <div class="field-label">
+                            <span>Input</span>
+
+                            <button
+                                class="copy-btn"
+                                type="button"
+                                data-copy="${input}"
+                                title="Copy input"
+                            >
+                                <i class="codicon codicon-copy"></i>
+                            </button>
+
                         </div>
-                        <div class="field">
-                            <div class="field-label">
-                                <span>Expected Output</span>
-                                <button class="copy-btn" type="button" data-copy="${expected}" title="Copy expected output">
-                                    <i class="codicon codicon-copy"></i>
-                                </button>
-                            </div>
-                            <pre>${expected}</pre>
+
+                        <pre>${input}</pre>
+
+                    </div>
+
+                    <div class="field">
+
+                        <div class="field-label">
+                            <span>Expected Output</span>
+
+                            <button
+                                class="copy-btn"
+                                type="button"
+                                data-copy="${expected}"
+                                title="Copy expected output"
+                            >
+                                <i class="codicon codicon-copy"></i>
+                            </button>
+
                         </div>
                     </div>
-                </div>`;
-        })
-        .join("");
+                    <pre>${expected}</pre>
 
+                    <div class="field">
+                        <div class="field-label">
+                            <span>Your Output</span>
+                            ${
+                                actualOutput
+                                    ? `
+                                        <button
+                                            class="copy-btn"
+                                            type="button"
+                                            data-copy="${escapeHtml(actualOutput)}"
+                                            title="Copy output"
+                                        >
+                                            <i class="codicon codicon-copy"></i>
+                                        </button>
+                                    `
+                                    : ""
+                            }
+                        </div>
+
+                        <pre>${escapeHtml(actualOutput || "No output")}</pre>
+
+                    </div>
+
+                </div>
+
+            </div>
+        `;
+    })
+    .join("");
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -150,6 +262,22 @@ export function getWebviewContent(
         background: radial-gradient(circle, rgba(128, 90, 213, 0.15) 0%, rgba(128, 90, 213, 0) 70%);
         pointer-events: none;
         z-index: 0;
+    }
+
+    .loader {
+        width: 12px;
+        height: 12px;
+        border: 2px solid rgba(99, 179, 237, 0.25);
+        border-top-color: var(--co-blue);
+        border-radius: 50%;
+        display: inline-block;
+        animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
     }
 
     .accent-bar {
@@ -460,7 +588,9 @@ export function getWebviewContent(
             <span class="title">${idLabel}${escapeHtml(problem.title)}</span>
         </div>
         <div class="meta-row">
-            <span class="badge-difficulty ${difficultyClass}">${escapeHtml(problem.difficulty)}</span>
+            <span class="badge-difficulty ${difficultyClass}">
+                ${escapeHtml(difficulty)}
+            </span>
             <span class="case-count">${total} Test Case${total === 1 ? "" : "s"}</span>
         </div>
     </div>
@@ -472,6 +602,7 @@ export function getWebviewContent(
     <div class="actions">
         <button id="runBtn" class="btn btn-run" type="button"><i class="codicon codicon-play"></i>Run</button>
         <button id="submitBtn" class="btn btn-submit" type="button"><i class="codicon codicon-cloud-upload"></i>Submit</button>
+        <button id="syncBtn" class="btn btn-run" type="button"><i class="codicon codicon-sync"></i>Sync Code</button>
     </div>
 
     <script nonce="${nonce}">
@@ -506,6 +637,19 @@ export function getWebviewContent(
         runBtn.addEventListener("click", () => {
             vscode.postMessage({
                 command: "runTests"
+            });
+        });
+        const syncBtn = document.getElementById("syncBtn");
+
+        syncBtn.addEventListener("click", () => {
+            vscode.postMessage({
+                command: "syncCode"
+            });
+        });
+        const submitBtn = document.getElementById("submitBtn");
+        submitBtn.addEventListener("click", () => {
+            vscode.postMessage({
+                command: "submit"
             });
         });
     </script>

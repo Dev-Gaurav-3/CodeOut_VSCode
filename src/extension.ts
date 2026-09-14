@@ -57,38 +57,47 @@ export function activate(context: vscode.ExtensionContext) {
 			codeOutViewProvider
 		)
 	);
+
 	socket.on("open", () => {
 		console.log("Connected to CodeOut server!");
+
+		socket.send(JSON.stringify({
+			type: "register",
+			client: "vscode"
+		}));
 	});
 
 	socket.on("message", async (message) => {
 		console.log("🔥 MESSAGE RECEIVED FROM SERVER");
-		console.log("Raw message:", message.toString());
-		const problem = JSON.parse(message.toString());
+		 const data = JSON.parse(message.toString());
+
+		// Results are handled by CodeOutViewProvider.
+		if (
+			data.command === "testResult" ||
+			data.command === "testResults"
+		) {
+			return;
+		}
+
+		const problem = data;
+
 		codeOutViewProvider.setProblem(problem);
+
 		console.log("Parsed problem:", problem);
+
 
 		const language = await vscode.window.showQuickPick(
 			[
 				"C++",
-				"Java",
 				"Python3",
 				"Python",
+				"Java",
 				"JavaScript",
 				"TypeScript",
-				"C#",
 				"C",
+				"C#",
 				"Go",
-				"Kotlin",
-				"Swift",
-				"Rust",
-				"Ruby",
-				"PHP",
-				"Dart",
-				"Scala",
-				"Elixir",
-				"Erlang",
-				"Racket"
+				"Rust"
 			],
 			{
 				placeHolder: "Select the language you want to use"
@@ -128,31 +137,22 @@ export function activate(context: vscode.ExtensionContext) {
 
 		const extensionMap: Record<string, string> = {
 			"C++": ".cpp",
-			"Java": ".java",
 			"Python3": ".py",
 			"Python": ".py",
+			"Java": ".java",
 			"JavaScript": ".js",
 			"TypeScript": ".ts",
-			"C#": ".cs",
 			"C": ".c",
+			"C#": ".cs",
 			"Go": ".go",
-			"Kotlin": ".kt",
-			"Swift": ".swift",
-			"Rust": ".rs",
-			"Ruby": ".rb",
-			"PHP": ".php",
-			"Dart": ".dart",
-			"Scala": ".scala",
-			"Elixir": ".ex",
-			"Erlang": ".erl",
-			"Racket": ".rkt"
+			"Rust": ".rs"
 		};
 
 		const fileExtension = extensionMap[language];
 
 		const fileUri = vscode.Uri.joinPath(
 			workspaceUri,
-			`${problem.slug}${fileExtension}`
+			`${problem.questionFrontendId}_${problem.slug}${fileExtension}`
 		);
 
 		try {
