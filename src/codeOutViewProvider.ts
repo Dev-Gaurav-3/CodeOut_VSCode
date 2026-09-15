@@ -8,7 +8,7 @@ export class CodeOutViewProvider implements vscode.WebviewViewProvider {
 
     private _view?: vscode.WebviewView;
     private _problem?: Problem;
-    private readonly socket: WebSocket;
+    private socket: WebSocket;
     private syncTimer?: NodeJS.Timeout;
     private _testResults?: {
         case: string;
@@ -16,18 +16,27 @@ export class CodeOutViewProvider implements vscode.WebviewViewProvider {
         output: string;
     }[];
 
+    private handleSocketMessage(message: WebSocket.RawData): void {
+        const data = JSON.parse(message.toString());
+
+        if (data.command === "testResults") {
+            this._testResults = data.results;
+            this.render();
+        }
+    }
+    private setupSocket(socket: WebSocket): void {
+        socket.on("message", (message) => {
+            this.handleSocketMessage(message);
+        });
+    }
+
     constructor(
         private readonly extensionUri: vscode.Uri,
         socket: WebSocket
     ) {
         this.socket = socket;
-        this.socket.on("message", (message) => {
-            const data = JSON.parse(message.toString());
-            if (data.command === "testResults") {
-                this._testResults = data.results;
-                this.render();
-            }
-        });
+        this.setupSocket(this.socket);
+        
         vscode.workspace.onDidChangeTextDocument((event) => {
 
         const editor = vscode.window.activeTextEditor;
@@ -59,6 +68,12 @@ export class CodeOutViewProvider implements vscode.WebviewViewProvider {
 
         }, 500);
     });
+
+    }
+
+    public setSocket(socket: WebSocket): void {
+        this.socket = socket;
+        this.setupSocket(socket);
     }
 
     resolveWebviewView(

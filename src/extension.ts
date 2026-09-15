@@ -2,6 +2,8 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 import WebSocket from "ws";
+import * as path from "path";
+import { spawn } from "child_process";
 import { CodeOutViewProvider } from "./codeOutViewProvider";
 
 // This method is called when your extension is activated
@@ -17,6 +19,26 @@ export function activate(context: vscode.ExtensionContext) {
 	// Use the console to output diagnostic information (console.log) and errors (console.error)
 	// This line of code will only be executed once when your extension is activated
 	// console.log('Congratulations, your extension "codeout" is now active!');
+
+	function startServer() {
+		const serverPath = path.join(
+			context.extensionPath,
+			"server",
+			"server.js"
+		);
+
+		const server = spawn(
+			process.execPath,
+			[serverPath],
+			{
+				cwd: path.dirname(serverPath),
+				detached: true,
+				stdio: "ignore"
+			}
+		);
+
+		server.unref();
+	}
 	console.log("🚀 CODEOUT NEW VERSION LOADED");
 	
 	console.log("🔥 CodeOut WebviewView REGISTERED 🔥");
@@ -45,143 +67,157 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 	});
 	
-	const socket = new WebSocket("ws://localhost:3000");
-	const codeOutViewProvider = new CodeOutViewProvider(
-		context.extensionUri,
-		socket
-	);
-	
-	context.subscriptions.push(
-		vscode.window.registerWebviewViewProvider(
-			CodeOutViewProvider.viewType,
-			codeOutViewProvider
-		)
-	);
+	let socket: WebSocket;
+	let codeOutViewProvider: CodeOutViewProvider;
 
-	socket.on("open", () => {
-		console.log("Connected to CodeOut server!");
+	function connectToServer() {
 
-		socket.send(JSON.stringify({
-			type: "register",
-			client: "vscode"
-		}));
-	});
+		socket = new WebSocket("ws://localhost:48721");
 
-	socket.on("message", async (message) => {
-		console.log("🔥 MESSAGE RECEIVED FROM SERVER");
-		 const data = JSON.parse(message.toString());
+		if (!codeOutViewProvider) {
+			codeOutViewProvider = new CodeOutViewProvider(
+				context.extensionUri,
+				socket
+			);
 
-		// Results are handled by CodeOutViewProvider.
-		if (
-			data.command === "testResult" ||
-			data.command === "testResults"
-		) {
-			return;
+			context.subscriptions.push(
+				vscode.window.registerWebviewViewProvider(
+					CodeOutViewProvider.viewType,
+					codeOutViewProvider
+				)
+			);
+		} else {
+			codeOutViewProvider.setSocket(socket);
 		}
 
-		const problem = data;
+		socket.on("open", () => {
+			console.log("Connected to CodeOut server!");
 
-		codeOutViewProvider.setProblem(problem);
+			socket.send(JSON.stringify({
+				type: "register",
+				client: "vscode"
+			}));
+		});
 
-		console.log("Parsed problem:", problem);
+		socket.on("message", async (message) => {
+			console.log("🔥 MESSAGE RECEIVED FROM SERVER");
+			const data = JSON.parse(message.toString());
 
-
-		const language = await vscode.window.showQuickPick(
-			[
-				"C++",
-				"Python3",
-				"Python",
-				"Java",
-				"JavaScript",
-				"TypeScript",
-				"C",
-				"C#",
-				"Go",
-				"Rust"
-			],
-			{
-				placeHolder: "Select the language you want to use"
+			// Results are handled by CodeOutViewProvider.
+			if (
+				data.command === "testResult" ||
+				data.command === "testResults"
+			) {
+				return;
 			}
-		);
 
-		if (!language) {
-			return;
-		}
+			const problem = data;
 
-		await vscode.commands.executeCommand(
-			"workbench.view.extension.codeout"
-		);
+			codeOutViewProvider.setProblem(problem);
 
-		const snippet = problem.codeSnippets.find(
-			(snippet: any) => snippet.lang === language
-		);
-		console.log("Selected snippet:", snippet);
-		console.log("Selected language:", language);
+			console.log("Parsed problem:", problem);
 
-		if (!snippet) {
-			vscode.window.showErrorMessage(
-				`No code snippet found for ${language}`
-			);
-			return;
-		}
 
-		const workspaceUri =
-			vscode.workspace.workspaceFolders?.[0]?.uri;
-
-		if (!workspaceUri) {
-			vscode.window.showErrorMessage(
-				"Please open a workspace folder first."
-			);
-			return;
-		}
-
-		const extensionMap: Record<string, string> = {
-			"C++": ".cpp",
-			"Python3": ".py",
-			"Python": ".py",
-			"Java": ".java",
-			"JavaScript": ".js",
-			"TypeScript": ".ts",
-			"C": ".c",
-			"C#": ".cs",
-			"Go": ".go",
-			"Rust": ".rs"
-		};
-
-		const fileExtension = extensionMap[language];
-
-		const fileUri = vscode.Uri.joinPath(
-			workspaceUri,
-			`${problem.questionFrontendId}_${problem.slug}${fileExtension}`
-		);
-
-		try {
-			await vscode.workspace.fs.writeFile(
-				fileUri,
-				Buffer.from(snippet.code, "utf8")
+			const language = await vscode.window.showQuickPick(
+				[
+					"C++",
+					"Python3",
+					"Python",
+					"Java",
+					"JavaScript",
+					"TypeScript",
+					"C",
+					"C#",
+					"Go",
+					"Rust"
+				],
+				{
+					placeHolder: "Select the language you want to use"
+				}
 			);
 
-			console.log("File created:", fileUri.fsPath);
+			if (!language) {
+				return;
+			}
+
+			await vscode.commands.executeCommand(
+				"workbench.view.extension.codeout"
+			);
+
+			const snippet = problem.codeSnippets.find(
+				(snippet: any) => snippet.lang === language
+			);
+			console.log("Selected snippet:", snippet);
+			console.log("Selected language:", language);
+
+			if (!snippet) {
+				vscode.window.showErrorMessage(
+					`No code snippet found for ${language}`
+				);
+				return;
+			}
+
+			const workspaceUri =
+				vscode.workspace.workspaceFolders?.[0]?.uri;
+
+			if (!workspaceUri) {
+				vscode.window.showErrorMessage(
+					"Please open a workspace folder first."
+				);
+				return;
+			}
+
+			const extensionMap: Record<string, string> = {
+				"C++": ".cpp",
+				"Python3": ".py",
+				"Python": ".py",
+				"Java": ".java",
+				"JavaScript": ".js",
+				"TypeScript": ".ts",
+				"C": ".c",
+				"C#": ".cs",
+				"Go": ".go",
+				"Rust": ".rs"
+			};
+
+			const fileExtension = extensionMap[language];
+			const fileUri = vscode.Uri.joinPath(
+				workspaceUri,
+				`${problem.questionFrontendId}_${problem.slug}${fileExtension}`
+			);
+
+			let fileExists = true;
+
+			try {
+				await vscode.workspace.fs.stat(fileUri);
+			} catch {
+				fileExists = false;
+			}
+
+			if (!fileExists) {
+				await vscode.workspace.fs.writeFile(
+					fileUri,
+					Buffer.from(snippet.code, "utf8")
+				);
+			}
+
 			const document = await vscode.workspace.openTextDocument(fileUri);
 			await vscode.window.showTextDocument(document);
+		});
 
-		} catch (error) {
-			console.error("Failed to create/open file:", error);
+		socket.on("error", (error) => {
+			console.error("WebSocket error:", error);
+		});
 
-			vscode.window.showErrorMessage(
-				"Failed to create CodeOut file."
-			);
-		}
-		console.log("Testcases:", problem.testcases);
-	});
-	socket.on("error", (error) => {
-		console.error("WebSocket error:", error);
-	});
+		socket.on("close", () => {
+			console.log("Disconnected from CodeOut server");
 
-	socket.on("close", () => {
-		console.log("Disconnected from CodeOut server");
-	});
-	
+			setTimeout(connectToServer, 500);
+		});
+	}
+	startServer();
+	connectToServer();
+
 	context.subscriptions.push(uriHandler);
 	
 	const testUriCommand = vscode.commands.registerCommand(

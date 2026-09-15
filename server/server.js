@@ -91,7 +91,7 @@ wss.on("connection", (client) => {
             return;
         }
         console.log("Message received:", data);
-        
+
         if (data.command === "submit") {
             if (!browserSocket) {
                 return;
@@ -116,6 +116,6 @@ wss.on("connection", (client) => {
     });
 });
 
-server.listen(3000, () => {
-    console.log("CodeOut server running on port 3000");
+server.listen(48721, () => {
+    console.log("CodeOut server running on port 48721");
 });
