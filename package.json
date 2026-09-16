@@ -3,7 +3,7 @@
     "displayName": "CodeOut",
     "description": "Code outside the platform.",
     "version": "0.0.1",
-    "publisher": "gaurav",
+    "publisher": "gaurav-builds-003",
     "engines": {
         "vscode": "^1.133.0"
     },
