@@ -12,7 +12,7 @@
 </div>
 
 <p align="center">
-  <img src="resources/CodeOut_sidebar_icon.svg" width="100" alt="CodeOut">
+  <img src="resources/Logo2.png" width="100" alt="CodeOut">
 </p>
 
 <h3 align="center">LeetCode, directly from VS Code.</h3>

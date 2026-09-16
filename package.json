@@ -7,6 +7,10 @@
     "engines": {
         "vscode": "^1.133.0"
     },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/Dev-Gaurav-3/CodeOut_VSCode.git"
+    },
     "categories": [
         "Other"
     ],
