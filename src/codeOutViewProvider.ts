@@ -2,73 +2,66 @@ import * as vscode from "vscode";
 import WebSocket from "ws";
 import { getWebviewContent, Problem } from "./webviewContent";
 
-export class CodeOutViewProvider implements vscode.WebviewViewProvider {
+type TestResult = {
+    case: string;
+    status: string;
+    output: string;
+};
 
+export class CodeOutViewProvider implements vscode.WebviewViewProvider {
     public static readonly viewType = "codeout.mainView";
 
     private _view?: vscode.WebviewView;
     private _problem?: Problem;
     private socket: WebSocket;
     private syncTimer?: NodeJS.Timeout;
-    private _testResults?: {
-        case: string;
-        status: string;
-        output: string;
-    }[];
-
-    private handleSocketMessage(message: WebSocket.RawData): void {
-        const data = JSON.parse(message.toString());
-
-        if (data.command === "testResults") {
-            this._testResults = data.results;
-            this.render();
-        }
-    }
-    private setupSocket(socket: WebSocket): void {
-        socket.on("message", (message) => {
-            this.handleSocketMessage(message);
-        });
-    }
+    private _testResults?: TestResult[];
 
     constructor(
         private readonly extensionUri: vscode.Uri,
         socket: WebSocket
     ) {
         this.socket = socket;
-        this.setupSocket(this.socket);
-        
+        this.setupSocket(socket);
+
         vscode.workspace.onDidChangeTextDocument((event) => {
+            const editor = vscode.window.activeTextEditor;
 
-        const editor = vscode.window.activeTextEditor;
+            if (!editor) {
+                return;
+            }
 
-        if (!editor) {
-            return;
-        }
+            if (event.document !== editor.document) {
+                return;
+            }
 
-        // Only sync the currently active CodeOut file
-        if (event.document !== editor.document) {
-            return;
-        }
+            if (this.syncTimer) {
+                clearTimeout(this.syncTimer);
+            }
 
-        // Cancel previous timer
-        if (this.syncTimer) {
-            clearTimeout(this.syncTimer);
-        }
+            this.syncTimer = setTimeout(() => {
+                const code = editor.document.getText();
 
-        // Wait until the user stops typing
-        this.syncTimer = setTimeout(() => {
+                this.socket.send(
+                    JSON.stringify({
+                        command: "syncCode",
+                        code,
+                        language: editor.document.languageId
+                    })
+                );
+            }, 500);
+        });
+    }
 
-            const code = editor.document.getText();
+    private setupSocket(socket: WebSocket): void {
+        socket.on("message", (message) => {
+            const data = JSON.parse(message.toString());
 
-            this.socket.send(JSON.stringify({
-                command: "syncCode",
-                code: code,
-                language: editor.document.languageId
-            }));
-
-        }, 500);
-    });
-
+            if (data.command === "testResults") {
+                this._testResults = data.results;
+                this.render();
+            }
+        });
     }
 
     public setSocket(socket: WebSocket): void {
@@ -76,15 +69,11 @@ export class CodeOutViewProvider implements vscode.WebviewViewProvider {
         this.setupSocket(socket);
     }
 
-    resolveWebviewView(
-        webviewView: vscode.WebviewView
-    ): void {
-
+    resolveWebviewView(webviewView: vscode.WebviewView): void {
         this._view = webviewView;
 
         webviewView.webview.options = {
             enableScripts: true,
-
             localResourceRoots: [
                 vscode.Uri.joinPath(
                     this.extensionUri,
@@ -92,85 +81,116 @@ export class CodeOutViewProvider implements vscode.WebviewViewProvider {
                     "@vscode",
                     "codicons",
                     "dist"
+                ),
+                vscode.Uri.joinPath(
+                    this.extensionUri,
+                    "resources"
                 )
             ]
         };
-        
 
         this.render();
-        webviewView.webview.onDidReceiveMessage(
-            async message => {
 
-                const editor = vscode.window.activeTextEditor;
+        webviewView.webview.onDidReceiveMessage(async (message) => {
 
-                if (!editor) {
-                    vscode.window.showErrorMessage(
-                        "No active editor found."
+            if (message.command === "openLink") {
+                const links: Record<string, string> = {
+                    github: "https://github.com/Dev-Gaurav-3/CodeOut_VSCode",
+                    feedback: "YOUR_FEEDBACK_URL",
+                    bugs: "https://github.com/Dev-Gaurav-3/CodeOut_VSCode/issues",
+                    support: "YOUR_BUY_ME_A_COFFEE_URL"
+                };
+
+                const url = links[message.target];
+
+                if (url) {
+                    await vscode.env.openExternal(
+                        vscode.Uri.parse(url)
                     );
-                    return;
                 }
 
-                if (message.command === "submit") {
-                this.socket.send(JSON.stringify({
-                    command: "submit"
-                }));
+                return;
             }
 
-                if (message.command === "syncCode") {
+            const editor = vscode.window.activeTextEditor;
 
-                    const code = editor.document.getText();
+            if (!editor) {
+                vscode.window.showErrorMessage(
+                    "No active editor found."
+                );
+                return;
+            }
 
-                    this.socket.send(JSON.stringify({
+            if (message.command === "submit") {
+                this.socket.send(
+                    JSON.stringify({
+                        command: "submit"
+                    })
+                );
+
+                return;
+            }
+
+            if (message.command === "syncCode") {
+                const code = editor.document.getText();
+
+                this.socket.send(
+                    JSON.stringify({
                         command: "syncCode",
-                        code: code,
+                        code,
                         language: editor.document.languageId
-                    }));
-                }
+                    })
+                );
 
-                if (message.command === "runTests") {
-
-                    console.log("🔥 RUN TESTS RECEIVED BY PROVIDER");
-                    this._testResults = this._problem?.testcases.map(
-                        (_, index) => ({
-                            case: `Case ${index + 1}`,
-                            status: "RUNNING",
-                            output: ""
-                        })
-                    );
-                    this.render();
-
-                    const editor = vscode.window.activeTextEditor;
-
-                    if (!editor) {
-                        console.log("❌ No active editor");
-                        return;
-                    }
-
-                    const code = editor.document.getText();
-
-                    console.log("🔥 Sending runCode to server");
-
-                    this.socket.send(JSON.stringify({
-                        command: "runCode",
-                        code: code,
-                        language: editor.document.languageId
-                    }));
-                }
+                return;
             }
-        );
+
+            if (message.command === "runTests") {
+                this._testResults = this._problem?.testcases.map(
+                    (_, index) => ({
+                        case: `Case ${index + 1}`,
+                        status: "RUNNING",
+                        output: ""
+                    })
+                );
+
+                this.render();
+
+                const code = editor.document.getText();
+
+                this.socket.send(
+                    JSON.stringify({
+                        command: "runCode",
+                        code,
+                        language: editor.document.languageId
+                    })
+                );
+
+                return;
+            }
+        });
+    }
+
+    public run(): void {
+        this._view?.webview.postMessage({
+            command: "runTests"
+        });
+    }
+
+    public submit(): void {
+        this._view?.webview.postMessage({
+            command: "submit"
+        });
     }
 
     public setProblem(problem: Problem): void {
         this._problem = problem;
-        // Reset previous test results
         this._testResults = undefined;
         this.render();
     }
 
-
     private render(): void {
-
-        if (!this._view || !this._problem) {
+        if (!this._view) {
             return;
         }
 
@@ -178,7 +198,7 @@ export class CodeOutViewProvider implements vscode.WebviewViewProvider {
             this._view.webview,
             this.extensionUri,
             this._problem,
-            this._testResults,
+            this._testResults
         );
     }
 }

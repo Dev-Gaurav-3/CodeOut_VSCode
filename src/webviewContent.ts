@@ -30,16 +30,371 @@ function getNonce(): string {
     return text;
 }
 
+function getBottomActions(): string {
+    return /* html */ `
+        <div class="bottom-section">
+
+            <div class="action-row">
+
+                <button class="action-button" data-action="github">
+                    <span class="codicon codicon-github"></span>
+                    <span>GitHub</span>
+                </button>
+
+                <button class="action-button" data-action="feedback">
+                    <span class="codicon codicon-comment-discussion"></span>
+                    <span>Feedback</span>
+                </button>
+
+                <button class="action-button" data-action="bugs">
+                    <span class="codicon codicon-bug"></span>
+                    <span>Bugs</span>
+                </button>
+
+            </div>
+
+            <button class="support-button" data-action="support">
+                <span class="codicon codicon-heart"></span>
+                <span>Buy Me a Coffee</span>
+            </button>
+
+            <div class="footer">
+                CodeOut · v0.0.1
+            </div>
+
+        </div>
+    `;
+    
+}
+
 function getStatusIcon(status: "pending" | "pass" | "fail"): string {
     if (status === "pass") return "codicon-check";
     if (status === "fail") return "codicon-error";
     return "codicon-clock";
 }
 
+function getWelcomeScreen(
+    webview: vscode.Webview,
+    extensionUri: vscode.Uri
+): string {
+    const nonce = getNonce();
+    const logoUri = webview.asWebviewUri(
+        vscode.Uri.joinPath(
+            extensionUri,
+            "resources",
+            "CodeOut_sidebar_icon.svg"
+        )
+    );
+    const codiconsUri = webview.asWebviewUri(
+        vscode.Uri.joinPath(
+            extensionUri,
+            "node_modules",
+            "@vscode",
+            "codicons",
+            "dist",
+            "codicon.css"
+        )
+    );
+
+    return /* html */ `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <link
+                href="${codiconsUri}"
+                rel="stylesheet"
+            />
+            <style>
+
+                * {
+                    box-sizing: border-box;
+                }
+
+                body {
+                    margin: 0;
+                    min-height: 100vh;
+
+                    background: #1e1e1e;
+                    color: #cccccc;
+
+                    font-family:
+                        -apple-system,
+                        BlinkMacSystemFont,
+                        "Segoe UI",
+                        Roboto,
+                        sans-serif;
+
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+
+                .container {
+                    width: 100%;
+                    padding: 28px 20px;
+                    text-align: center;
+                }
+
+                .logo {
+                    width: 72px;
+                    height: 72px;
+
+                    margin: 0 auto 18px;
+
+                    object-fit: contain;
+                }
+
+                .title {
+                    font-size: 22px;
+                    font-weight: 600;
+
+                    color: #ffffff;
+
+                    margin-bottom: 6px;
+                }
+
+                .subtitle {
+                    font-size: 13px;
+                    color: #858585;
+
+                    margin-bottom: 28px;
+                }
+
+                .message {
+                    background: #252526;
+
+                    border: 1px solid #333333;
+                    border-radius: 8px;
+
+                    padding: 18px 14px;
+
+                    margin-bottom: 22px;
+                }
+
+                .message-title {
+                    font-size: 14px;
+                    font-weight: 600;
+
+                    color: #cccccc;
+
+                    margin-bottom: 8px;
+                }
+
+                .message-text {
+                    font-size: 12px;
+                    line-height: 1.6;
+
+                    color: #858585;
+                }
+
+                .features {
+                    display: flex;
+                    flex-direction: column;
+
+                    gap: 10px;
+
+                    text-align: left;
+                }
+
+                .feature {
+                    display: flex;
+                    align-items: center;
+
+                    gap: 10px;
+
+                    font-size: 12px;
+                    color: #bdbdbd;
+                }
+
+                .check {
+                    width: 20px;
+                    height: 20px;
+
+                    flex-shrink: 0;
+
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+
+                    border-radius: 50%;
+
+                    background: #2d2d2d;
+
+                    color: #89d185;
+
+                    font-size: 11px;
+                }
+
+                .footer {
+                    margin-top: 28px;
+
+                    font-size: 11px;
+                    color: #555555;
+                }
+                
+
+            .bottom-section {
+                margin-top: auto;
+                padding-top: 12px;
+            }
+
+            .action-row {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 4px;
+            }
+
+            .action-button,
+            .support-button {
+                border: none;
+                cursor: pointer;
+
+                background: #252526;
+                color: #cccccc;
+
+                font-family: inherit;
+                font-size: 11px;
+
+                transition: background 0.15s ease, color 0.15s ease;
+            }
+
+            .action-button {
+                height: 30px;
+
+                display: flex;
+                align-items: center;
+                justify-content: center;
+
+                gap: 5px;
+
+                border-radius: 3px;
+            }
+
+            .action-button:hover {
+                background: #333333;
+                color: #ffffff;
+            }
+
+            .support-button {
+                width: 100%;
+                height: 30px;
+
+                margin-top: 4px;
+
+                display: flex;
+                align-items: center;
+                justify-content: center;
+
+                gap: 6px;
+
+                border-radius: 3px;
+            }
+
+            .support-button:hover {
+                background: #333333;
+                color: #ffffff;
+            }
+
+            .codicon {
+                font-size: 14px;
+            }
+
+            .footer {
+                text-align: center;
+
+                margin-top: 8px;
+
+                font-size: 10px;
+                color: #666666;
+            }
+
+            </style>
+        </head>
+        <body>
+
+            <div class="container">
+
+                <img
+                    class="logo"
+                    src="${logoUri}"
+                    alt="CodeOut"
+                >
+
+                <div class="title">
+                    CodeOut
+                </div>
+
+                <div class="subtitle">
+                    Code outside the platform.
+                </div>
+
+                <div class="message">
+
+                    <div class="message-title">
+                        No problem selected
+                    </div>
+
+                    <div class="message-text">
+                        Open a problem on LeetCode and
+                        click the CodeOut extension button
+                        to start coding here.
+                    </div>
+
+                </div>
+
+                <div class="features">
+
+                    <div class="feature">
+                        <div class="check">✓</div>
+                        <span>Sync code with LeetCode</span>
+                    </div>
+
+                    <div class="feature">
+                        <div class="check">✓</div>
+                        <span>Run test cases from VS Code</span>
+                    </div>
+
+                    <div class="feature">
+                        <div class="check">✓</div>
+                        <span>View test results</span>
+                    </div>
+
+                    <div class="feature">
+                        <div class="check">✓</div>
+                        <span>Submit directly to LeetCode</span>
+                    </div>
+
+                </div>
+
+                <div class="footer">
+                    LeetCode ↔ VS Code
+                </div>
+                ${getBottomActions()}
+            </div>
+
+            <script nonce="${nonce}">
+                const vscode = acquireVsCodeApi();
+
+                document.querySelectorAll("[data-action]").forEach((button) => {
+                    button.addEventListener("click", () => {
+                        vscode.postMessage({
+                            command: "openLink",
+                            target: button.getAttribute("data-action")
+                        });
+                    });
+                });
+            </script>
+
+        </body>
+        </html>
+    `;
+}
+
 export function getWebviewContent(
     webview: vscode.Webview,
     extensionUri: vscode.Uri,
-    problem: Problem,
+    problem?: Problem,
     testResults?: {
         case: string;
         status: string;
@@ -50,6 +405,10 @@ export function getWebviewContent(
     const codiconUri = webview.asWebviewUri(
         vscode.Uri.joinPath(extensionUri, "node_modules", "@vscode", "codicons", "dist", "codicon.css")
     );
+
+    if (!problem) {
+        return getWelcomeScreen(webview, extensionUri);
+    }
 
     const difficulty = problem.difficulty ?? "Unknown";
     const difficultyClass = difficulty.toLowerCase();
@@ -83,24 +442,14 @@ const casesHtml = problem.testcases
 
         if (isRunning) {
             statusLabel = "RUNNING";
-        }
-        else if (isAccepted) {
+        } else if (isAccepted) {
             status = "pass";
             statusLabel = "ACCEPTED";
-        }
-        else if (isWrongAnswer) {
+        } else if (isWrongAnswer) {
             status = "fail";
-
-            if (resultStatus === "Wrong Answer") {
-                statusLabel = "WRONG ANSWER";
-            }
-            else {
-                statusLabel = resultStatus!.toUpperCase();
-            }
+            statusLabel = resultStatus!.toUpperCase();
         }
 
-        // Accepted cases automatically collapse.
-        // Wrong Answer cases stay expanded.
         const collapsed = isAccepted ? "collapsed" : "";
 
         return `
@@ -200,8 +549,7 @@ const casesHtml = problem.testcases
                     </div>
 
                 </div>
-
-            </div>
+                </div>
         `;
     })
     .join("");
@@ -578,6 +926,81 @@ const casesHtml = problem.testcases
         transform: translateY(-1px); 
     }
     .btn i { font-size: 16px; }
+    .bottom-section {
+        flex-shrink: 0;
+
+        padding: 6px 6px 8px;
+
+        background: #1e1e1e;
+    }
+    .action-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 4px;
+    }
+
+    .action-button,
+    .support-button {
+        border: none;
+        outline: none;
+        cursor: pointer;
+
+        background: #2d2d2d;
+        color: #cccccc;
+
+        font-family: inherit;
+        font-size: 11px;
+
+        transition:
+            background 0.15s ease,
+            color 0.15s ease;
+    }
+
+    .action-button {
+        height: 30px;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        gap: 5px;
+
+        border-radius: 3px;
+    }
+
+    .support-button {
+        width: 100%;
+        height: 30px;
+
+        margin-top: 4px;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        gap: 6px;
+
+        border-radius: 3px;
+    }
+
+    .action-button:hover,
+    .support-button:hover {
+        background: #3a3a3a;
+        color: #ffffff;
+    }
+
+    .codicon {
+        font-size: 14px;
+    }
+
+    .footer {
+        margin-top: 6px;
+
+        text-align: center;
+
+        font-size: 10px;
+        color: #666666;
+    }
 </style>
 </head>
 <body>
@@ -604,6 +1027,7 @@ const casesHtml = problem.testcases
         <button id="submitBtn" class="btn btn-submit" type="button"><i class="codicon codicon-cloud-upload"></i>Submit</button>
         <button id="syncBtn" class="btn btn-run" type="button"><i class="codicon codicon-sync"></i>Sync Code</button>
     </div>
+    ${getBottomActions()}
 
     <script nonce="${nonce}">
         document.querySelectorAll(".case-header").forEach((header) => {
@@ -632,6 +1056,21 @@ const casesHtml = problem.testcases
             });
         });
         const vscode = acquireVsCodeApi();
+
+        window.addEventListener("message", (event) => {
+            if (event.data.command === "runTests") {
+                vscode.postMessage({
+                    command: "runTests"
+                });
+            }
+
+            if (event.data.command === "submit") {
+                vscode.postMessage({
+                    command: "submit"
+                });
+            }
+        });
+
         const runBtn = document.getElementById("runBtn");
 
         runBtn.addEventListener("click", () => {
@@ -650,6 +1089,14 @@ const casesHtml = problem.testcases
         submitBtn.addEventListener("click", () => {
             vscode.postMessage({
                 command: "submit"
+            });
+        });
+        document.querySelectorAll("[data-action]").forEach((button) => {
+            button.addEventListener("click", () => {
+                vscode.postMessage({
+                    command: "openLink",
+                    target: button.getAttribute("data-action")
+                });
             });
         });
     </script>

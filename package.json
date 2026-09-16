@@ -1,85 +1,92 @@
 {
-  "name": "codeout",
-  "displayName": "CodeOut",
-  "description": "Code outside the platform.",
-  "version": "0.0.1",
-  "publisher": "gaurav",
-  "engines": {
-    "vscode": "^1.133.0"
-  },
-  "categories": [
-    "Other"
-  ],
-  "activationEvents": [
-    "*"
-  ],
-  "main": "./dist/extension.js",
-  "contributes": {
-    "commands": [
-      {
-        "command": "codeout.helloWorld",
-        "title": "CodeOut: Hello World"
-      },
-      {
-        "command": "codeout.testUri",
-        "title": "CodeOut: Test URI"
-      }
-    ],
-    "viewsContainers": {
-      "activitybar": [
-        {
-          "id": "codeout",
-          "title": "CodeOut",
-          "icon": "resources/codeout.svg"
-        }
-      ]
+    "name": "codeout",
+    "displayName": "CodeOut",
+    "description": "Code outside the platform.",
+    "version": "0.0.1",
+    "publisher": "gaurav",
+    "engines": {
+        "vscode": "^1.133.0"
     },
-    "views": {
-      "codeout": [
+    "categories": [
+        "Other"
+    ],
+    "activationEvents": [
+        "*"
+    ],
+    "main": "./dist/extension.js",
+    "contributes": {
+        "commands": [
         {
-          "type": "webview",
-          "id": "codeout.mainView",
-          "name": "CodeOut"
+            "command": "codeout.run",
+            "title": "CodeOut: Run"
+        },
+        {
+            "command": "codeout.submit",
+            "title": "CodeOut: Submit"
         }
-      ]
+        ],
+        "keybindings": [
+            {
+                "command": "codeout.run",
+                "key": "ctrl+enter"
+            },
+            {
+                "command": "codeout.submit",
+                "key": "ctrl+shift+enter"
+            }
+        ],
+        "viewsContainers": {
+            "activitybar": [
+                {
+                    "id": "codeout",
+                    "title": "CodeOut",
+                    "icon": "resources/CodeOut_sidebar_icon.svg"
+                }
+            ]
+        },
+        "views": {
+            "codeout": [
+                {
+                    "type": "webview",
+                    "id": "codeout.mainView",
+                    "name": "CodeOut"
+                }
+            ]
+        }
+    },
+    "scripts": {
+        "vscode:prepublish": "npm run package",
+        "compile": "npm run check-types && npm run lint && node esbuild.js",
+        "watch": "npm-run-all -p watch:*",
+        "watch:esbuild": "node esbuild.js --watch",
+        "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
+        "package": "npm run check-types && npm run lint && node esbuild.js --production",
+        "check-types": "tsc --noEmit",
+        "lint": "eslint src",
+        "test": "vscode-test"
+    },
+    "devDependencies": {
+        "@types/mocha": "^10.0.10",
+        "@types/node": "24.x",
+        "@types/vscode": "^1.133.0",
+        "@types/ws": "^8.18.1",
+        "@vscode/test-cli": "^0.0.15",
+        "@vscode/test-electron": "^3.0.0",
+        "@vscode/vsce": "^4.0.0",
+        "esbuild": "^0.28.1",
+        "eslint": "^10.5.0",
+        "npm-run-all": "^4.1.5",
+        "typescript": "^6.0.3",
+        "typescript-eslint": "^8.61.1"
+    },
+    "overrides": {
+        "diff": "^8.0.4",
+        "serialize-javascript": "^7.0.6"
+    },
+    "dependencies": {
+        "@vscode/codicons": "^0.0.46-24",
+        "cors": "^2.8.6",
+        "express": "^5.2.1",
+        "ws": "^8.21.3"
     }
-  },
-  "scripts": {
-    "vscode:prepublish": "npm run package",
-    "compile": "npm run check-types && npm run lint && node esbuild.js",
-    "watch": "npm-run-all -p watch:*",
-    "watch:esbuild": "node esbuild.js --watch",
-    "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
-    "package": "npm run check-types && npm run lint && node esbuild.js --production",
-    "compile-tests": "tsc -p . --outDir out",
-    "watch-tests": "tsc -p . -w --outDir out",
-    "pretest": "npm run compile-tests && npm run compile && npm run lint",
-    "check-types": "tsc --noEmit",
-    "lint": "eslint src",
-    "test": "vscode-test"
-  },
-  "devDependencies": {
-    "@types/mocha": "^10.0.10",
-    "@types/node": "24.x",
-    "@types/vscode": "^1.133.0",
-    "@types/ws": "^8.18.1",
-    "@vscode/test-cli": "^0.0.15",
-    "@vscode/test-electron": "^3.0.0",
-    "@vscode/vsce": "^4.0.0",
-    "esbuild": "^0.28.1",
-    "eslint": "^10.5.0",
-    "npm-run-all": "^4.1.5",
-    "typescript": "^6.0.3",
-    "typescript-eslint": "^8.61.1"
-  },
-  "overrides": {
-    "diff": "^8.0.4",
-    "serialize-javascript": "^7.0.6"
-  },
-  "dependencies": {
-    "@vscode/codicons": "^0.0.46-24",
-    "cors": "^2.8.6",
-    "express": "^5.2.1",
-    "ws": "^8.21.3"
-  }
 }
