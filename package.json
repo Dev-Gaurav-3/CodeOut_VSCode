@@ -2,8 +2,9 @@
     "name": "codeout",
     "displayName": "CodeOut",
     "description": "Code outside the platform.",
-    "version": "0.0.1",
+    "version": "0.0.3",
     "publisher": "gaurav-builds-003",
+    "icon": "resources/Logo2.png",
     "engines": {
         "vscode": "^1.133.0"
     },

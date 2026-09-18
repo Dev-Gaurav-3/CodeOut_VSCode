@@ -96,9 +96,9 @@ export class CodeOutViewProvider implements vscode.WebviewViewProvider {
             if (message.command === "openLink") {
                 const links: Record<string, string> = {
                     github: "https://github.com/Dev-Gaurav-3/CodeOut_VSCode",
-                    feedback: "YOUR_FEEDBACK_URL",
+                    feedback: "https://forms.gle/XDL9uwndRMGUjkhQ8",
                     bugs: "https://github.com/Dev-Gaurav-3/CodeOut_VSCode/issues",
-                    support: "YOUR_BUY_ME_A_COFFEE_URL"
+                    support: "https://buymeacoffee.com/gaurav003"
                 };
 
                 const url = links[message.target];
