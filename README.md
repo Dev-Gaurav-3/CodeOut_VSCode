@@ -47,6 +47,19 @@ CodeOut uses a lightweight local WebSocket server to communicate between the VS 
 
 ---
 
+# HOW to use CodeOut
+
+<img src="./resources/1.png">
+
+<img src="./resources/2.png">
+
+<img src="./resources/3.png">
+
+<img src="./resources/4.png">
+
+<img src="./resources/5.png">
+
+
 ## ✨ Features
 
 ### 📥 Problem Transfer

@@ -59,7 +59,7 @@ function getBottomActions(): string {
             </button>
 
             <div class="footer">
-                CodeOut · v0.0.1
+                CodeOut · v0.0.3
             </div>
 
         </div>
