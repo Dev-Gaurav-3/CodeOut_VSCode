@@ -2,7 +2,7 @@
     "name": "codeout",
     "displayName": "CodeOut",
     "description": "Code outside the platform.",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "publisher": "gaurav-builds-003",
     "icon": "resources/Logo2.png",
     "engines": {

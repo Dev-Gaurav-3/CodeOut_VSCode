@@ -77,13 +77,6 @@ export class CodeOutViewProvider implements vscode.WebviewViewProvider {
             localResourceRoots: [
                 vscode.Uri.joinPath(
                     this.extensionUri,
-                    "node_modules",
-                    "@vscode",
-                    "codicons",
-                    "dist"
-                ),
-                vscode.Uri.joinPath(
-                    this.extensionUri,
                     "resources"
                 )
             ]

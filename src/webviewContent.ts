@@ -57,11 +57,6 @@ function getBottomActions(): string {
                 <span class="codicon codicon-heart"></span>
                 <span>Buy Me a Coffee</span>
             </button>
-
-            <div class="footer">
-                CodeOut · v0.0.3
-            </div>
-
         </div>
     `;
     
@@ -88,10 +83,8 @@ function getWelcomeScreen(
     const codiconsUri = webview.asWebviewUri(
         vscode.Uri.joinPath(
             extensionUri,
-            "node_modules",
-            "@vscode",
+            "resources",
             "codicons",
-            "dist",
             "codicon.css"
         )
     );
@@ -403,7 +396,12 @@ export function getWebviewContent(
 ): string {
     const nonce = getNonce();
     const codiconUri = webview.asWebviewUri(
-        vscode.Uri.joinPath(extensionUri, "node_modules", "@vscode", "codicons", "dist", "codicon.css")
+        vscode.Uri.joinPath(
+            extensionUri,
+            "resources",
+            "codicons",
+            "codicon.css"
+        )
     );
 
     if (!problem) {
