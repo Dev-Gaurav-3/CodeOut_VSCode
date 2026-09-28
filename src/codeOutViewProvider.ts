@@ -13,9 +13,43 @@ export class CodeOutViewProvider implements vscode.WebviewViewProvider {
 
     private _view?: vscode.WebviewView;
     private _problem?: Problem;
+    private _codeOutDocument?: vscode.Uri;
     private socket: WebSocket;
     private syncTimer?: NodeJS.Timeout;
     private _testResults?: TestResult[];
+
+    private checkCodeOutTab(): void {
+    if (!this._codeOutDocument) {
+        return;
+    }
+
+    const codeOutUri = this._codeOutDocument.toString();
+        const isOpen = vscode.window.tabGroups.all.some(group =>
+            group.tabs.some(tab => {
+                const input = tab.input;
+
+                return (
+                    input instanceof vscode.TabInputText &&
+                    input.uri.toString() === codeOutUri
+                );
+            })
+        );
+
+        if (isOpen) {
+            return;
+        }
+
+        if (this.syncTimer) {
+            clearTimeout(this.syncTimer);
+            this.syncTimer = undefined;
+        }
+
+        this._codeOutDocument = undefined;
+        this._problem = undefined;
+        this._testResults = undefined;
+
+        this.render();
+    }
 
     constructor(
         private readonly extensionUri: vscode.Uri,
@@ -25,13 +59,14 @@ export class CodeOutViewProvider implements vscode.WebviewViewProvider {
         this.setupSocket(socket);
 
         vscode.workspace.onDidChangeTextDocument((event) => {
-            const editor = vscode.window.activeTextEditor;
-
-            if (!editor) {
+            if (!this._codeOutDocument) {
                 return;
             }
 
-            if (event.document !== editor.document) {
+            if (
+                event.document.uri.toString() !==
+                this._codeOutDocument.toString()
+            ) {
                 return;
             }
 
@@ -40,17 +75,81 @@ export class CodeOutViewProvider implements vscode.WebviewViewProvider {
             }
 
             this.syncTimer = setTimeout(() => {
-                const code = editor.document.getText();
+
+                if (!this._codeOutDocument) {
+                    return;
+                }
+
+                const code = event.document.getText();
 
                 this.socket.send(
                     JSON.stringify({
                         command: "syncCode",
                         code,
-                        language: editor.document.languageId
+                        language: event.document.languageId
                     })
                 );
+
             }, 500);
         });
+
+        vscode.window.tabGroups.onDidChangeTabs(() => {
+            this.checkCodeOutTab();
+        });
+
+        vscode.workspace.onDidCloseTextDocument((document) => {
+            if (
+                !this._codeOutDocument ||
+                document.uri.toString() !==
+                this._codeOutDocument.toString()
+            ) {
+                return;
+            }
+
+            if (this.syncTimer) {
+                clearTimeout(this.syncTimer);
+                this.syncTimer = undefined;
+            }
+
+            this._codeOutDocument = undefined;
+            this._problem = undefined;
+            this._testResults = undefined;
+
+            this.render();
+        });
+
+        // vscode.workspace.onDidCloseTextDocument((document) => {
+        //     if (
+        //         !this._codeOutDocument ||
+        //         document.uri.toString() !==
+        //         this._codeOutDocument.toString()
+        //     ) {
+        //         return;
+        //     }
+
+        //     if (this.syncTimer) {
+        //         clearTimeout(this.syncTimer);
+        //         this.syncTimer = undefined;
+        //     }
+
+        //     this._codeOutDocument = undefined;
+        //     this._problem = undefined;
+        //     this._testResults = undefined;
+
+        //     this.render();
+        // });
+        }
+
+    private getCodeOutDocument(): vscode.TextDocument | undefined {
+        if (!this._codeOutDocument) {
+            return undefined;
+        }
+
+        return vscode.workspace.textDocuments.find(
+            document =>
+                document.uri.toString() ===
+                this._codeOutDocument!.toString()
+        );
     }
 
     private setupSocket(socket: WebSocket): void {
@@ -105,15 +204,6 @@ export class CodeOutViewProvider implements vscode.WebviewViewProvider {
                 return;
             }
 
-            const editor = vscode.window.activeTextEditor;
-
-            if (!editor) {
-                vscode.window.showErrorMessage(
-                    "No active editor found."
-                );
-                return;
-            }
-
             if (message.command === "submit") {
                 this.socket.send(
                     JSON.stringify({
@@ -125,20 +215,37 @@ export class CodeOutViewProvider implements vscode.WebviewViewProvider {
             }
 
             if (message.command === "syncCode") {
-                const code = editor.document.getText();
+                const document = this.getCodeOutDocument();
+
+                if (!document) {
+                    vscode.window.showErrorMessage(
+                        "CodeOut file is not open."
+                    );
+                    return;
+                }
+
+                const code = document.getText();
 
                 this.socket.send(
                     JSON.stringify({
                         command: "syncCode",
                         code,
-                        language: editor.document.languageId
+                        language: document.languageId
                     })
                 );
 
                 return;
             }
-
             if (message.command === "runTests") {
+                const document = this.getCodeOutDocument();
+
+                if (!document) {
+                    vscode.window.showErrorMessage(
+                        "CodeOut file is not open."
+                    );
+                    return;
+                }
+
                 this._testResults = this._problem?.testcases.map(
                     (_, index) => ({
                         case: `Case ${index + 1}`,
@@ -149,13 +256,13 @@ export class CodeOutViewProvider implements vscode.WebviewViewProvider {
 
                 this.render();
 
-                const code = editor.document.getText();
+                const code = document.getText();
 
                 this.socket.send(
                     JSON.stringify({
                         command: "runCode",
                         code,
-                        language: editor.document.languageId
+                        language: document.languageId
                     })
                 );
 
@@ -174,6 +281,10 @@ export class CodeOutViewProvider implements vscode.WebviewViewProvider {
         this._view?.webview.postMessage({
             command: "submit"
         });
+    }
+
+    public setCodeOutDocument(uri: vscode.Uri): void {
+        this._codeOutDocument = uri;
     }
 
     public setProblem(problem: Problem): void {

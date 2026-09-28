@@ -176,6 +176,7 @@ export function activate(context: vscode.ExtensionContext) {
                 await vscode.workspace.openTextDocument(fileUri);
 
             await vscode.window.showTextDocument(document);
+            codeOutViewProvider.setCodeOutDocument(document.uri);
         });
 
         socket.on("error", (error) => {
