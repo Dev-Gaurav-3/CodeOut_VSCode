@@ -63,6 +63,16 @@ wss.on("connection", (client) => {
             return;
         }
 
+        if (data.command === "connectionTimeout") {
+            if (!vscodeSocket) {
+                console.log("❌ VS Code is not connected");
+                return;
+            }
+
+            vscodeSocket.send(JSON.stringify(data));
+            return;
+        }
+
         if (data.command === "submit") {
             if (!browserSocket) {
                 console.log("❌ Browser extension is not connected");

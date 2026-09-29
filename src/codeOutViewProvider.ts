@@ -17,6 +17,9 @@ export class CodeOutViewProvider implements vscode.WebviewViewProvider {
     private socket: WebSocket;
     private syncTimer?: NodeJS.Timeout;
     private _testResults?: TestResult[];
+    private _isContestProblem = false;
+    private _contestWarningDismissed = false;
+    private runTimeout?: NodeJS.Timeout;
 
     private checkCodeOutTab(): void {
     if (!this._codeOutDocument) {
@@ -61,6 +64,10 @@ export class CodeOutViewProvider implements vscode.WebviewViewProvider {
         vscode.workspace.onDidChangeTextDocument((event) => {
             if (!this._codeOutDocument) {
                 return;
+            }
+
+            if (this._isContestProblem) {
+               return;
             }
 
             if (
@@ -117,27 +124,6 @@ export class CodeOutViewProvider implements vscode.WebviewViewProvider {
 
             this.render();
         });
-
-        // vscode.workspace.onDidCloseTextDocument((document) => {
-        //     if (
-        //         !this._codeOutDocument ||
-        //         document.uri.toString() !==
-        //         this._codeOutDocument.toString()
-        //     ) {
-        //         return;
-        //     }
-
-        //     if (this.syncTimer) {
-        //         clearTimeout(this.syncTimer);
-        //         this.syncTimer = undefined;
-        //     }
-
-        //     this._codeOutDocument = undefined;
-        //     this._problem = undefined;
-        //     this._testResults = undefined;
-
-        //     this.render();
-        // });
         }
 
     private getCodeOutDocument(): vscode.TextDocument | undefined {
@@ -157,6 +143,11 @@ export class CodeOutViewProvider implements vscode.WebviewViewProvider {
             const data = JSON.parse(message.toString());
 
             if (data.command === "testResults") {
+                if (this.runTimeout) {
+                    clearTimeout(this.runTimeout);
+                    this.runTimeout = undefined;
+                }
+
                 this._testResults = data.results;
                 this.render();
             }
@@ -190,7 +181,10 @@ export class CodeOutViewProvider implements vscode.WebviewViewProvider {
                     github: "https://github.com/Dev-Gaurav-3/CodeOut_VSCode",
                     feedback: "https://forms.gle/XDL9uwndRMGUjkhQ8",
                     bugs: "https://github.com/Dev-Gaurav-3/CodeOut_VSCode/issues",
-                    support: "https://buymeacoffee.com/gaurav003"
+                    firefox : "https://addons.mozilla.org/en-US/firefox/addon/codeout/",
+                    edge : "https://microsoftedge.microsoft.com/addons/detail/pkpobpaobgnhnnfkpgdepkdadihnpcki",
+                    support:""
+
                 };
 
                 const url = links[message.target];
@@ -201,6 +195,11 @@ export class CodeOutViewProvider implements vscode.WebviewViewProvider {
                     );
                 }
 
+                return;
+            }
+            if (message.command === "dismissContestWarning") {
+                this._contestWarningDismissed = true;
+                this.render();
                 return;
             }
 
@@ -237,6 +236,11 @@ export class CodeOutViewProvider implements vscode.WebviewViewProvider {
                 return;
             }
             if (message.command === "runTests") {
+                if (this.runTimeout) {
+                    clearTimeout(this.runTimeout);
+                    this.runTimeout = undefined;
+                }
+
                 const document = this.getCodeOutDocument();
 
                 if (!document) {
@@ -266,6 +270,26 @@ export class CodeOutViewProvider implements vscode.WebviewViewProvider {
                     })
                 );
 
+                this.runTimeout = setTimeout(() => {
+
+                    if (this._testResults) {
+                        this._testResults = this._testResults.map(test => ({
+                            ...test,
+                            status: "FAILED",
+                            output: "LeetCode did not respond within 15 seconds."
+                        }));
+                    }
+
+                    this.render();
+
+                    vscode.window.showWarningMessage(
+                        "CodeOut is still waiting for LeetCode. The page may be disconnected or unresponsive. Please reload the LeetCode problem and try again."
+                    );
+
+                    this.runTimeout = undefined;
+
+                }, 15000);
+
                 return;
             }
         });
@@ -289,6 +313,8 @@ export class CodeOutViewProvider implements vscode.WebviewViewProvider {
 
     public setProblem(problem: Problem): void {
         this._problem = problem;
+        this._isContestProblem = problem.isContestProblem;
+        this._contestWarningDismissed = false;
         this._testResults = undefined;
         this.render();
     }
@@ -302,7 +328,8 @@ export class CodeOutViewProvider implements vscode.WebviewViewProvider {
             this._view.webview,
             this.extensionUri,
             this._problem,
-            this._testResults
+            this._testResults,
+            this._contestWarningDismissed
         );
     }
 }

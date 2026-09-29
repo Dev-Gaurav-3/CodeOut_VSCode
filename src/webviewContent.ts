@@ -10,6 +10,7 @@ export interface Problem {
     title: string;
     difficulty: string;
     testcases: TestCase[];
+    isContestProblem: boolean;
 }
 
 function escapeHtml(unsafe: string): string {
@@ -51,12 +52,18 @@ function getBottomActions(): string {
                     <span>Bugs</span>
                 </button>
 
-            </div>
-
-            <button class="support-button" data-action="support">
-                <span class="codicon codicon-heart"></span>
-                <span>Buy Me a Coffee</span>
-            </button>
+                <button class="action-button" data-action="firefox">
+                    <span class="codicon codicon-extensions"></span>
+                    <span>Firefox Add-On</span>
+                </button>
+                <button class="action-button" data-action="edge">
+                    <span class="codicon codicon-extensions"></span>
+                    <span>Edge Add-On</span>
+                </button>
+                <button class="action-button" data-action="support">
+                    <span class="codicon codicon-heart-filled"></span>
+                    <span>Support</span>
+                </button>
         </div>
     `;
     
@@ -238,8 +245,7 @@ function getWelcomeScreen(
                 gap: 4px;
             }
 
-            .action-button,
-            .support-button {
+            .action-button{
                 border: none;
                 cursor: pointer;
 
@@ -392,7 +398,8 @@ export function getWebviewContent(
         case: string;
         status: string;
         output: string;
-    }[]
+    }[],
+    contestWarningDismissed = false
 ): string {
     const nonce = getNonce();
     const codiconUri = webview.asWebviewUri(
@@ -407,6 +414,7 @@ export function getWebviewContent(
     if (!problem) {
         return getWelcomeScreen(webview, extensionUri);
     }
+
 
     const difficulty = problem.difficulty ?? "Unknown";
     const difficultyClass = difficulty.toLowerCase();
@@ -999,6 +1007,132 @@ const casesHtml = problem.testcases
         font-size: 10px;
         color: #666666;
     }
+        .contest-warning {
+            position: relative;
+            display: flex;
+            gap: 16px;
+            margin: 20px 20px;
+            padding: 18px;
+            border: 1px solid #ef4444;
+            border-radius: 12px;
+            background: linear-gradient(
+                135deg,
+                rgba(127, 29, 29, 0.35),
+                rgba(69, 10, 10, 0.28)
+            );
+            box-shadow:
+                0 8px 24px rgba(0, 0, 0, 0.25),
+                inset 0 0 24px rgba(239, 68, 68, 0.04);
+        }
+
+        .contest-warning-icon {
+            flex-shrink: 0;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: rgba(239, 68, 68, 0.12);
+            color: #f87171;
+            font-size: 24px;
+        }
+
+        .contest-warning-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .contest-warning-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .contest-warning-title {
+            color: #f87171;
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .contest-warning-close {
+            flex-shrink: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            border: 1px solid rgba(248, 113, 113, 0.25);
+            border-radius: 8px;
+            background: rgba(127, 29, 29, 0.35);
+            color: #d1d5db;
+            cursor: pointer;
+            transition:
+                background 0.15s ease,
+                color 0.15s ease;
+        }
+
+        .contest-warning-close:hover {
+            background: rgba(239, 68, 68, 0.25);
+            color: #ffffff;
+        }
+
+        .contest-warning-text {
+            color: var(--vscode-foreground);
+            font-size: 13px;
+            line-height: 1.6;
+            opacity: 0.9;
+        }
+
+        .contest-warning-text strong {
+            color: #fca5a5;
+        }
+
+        .contest-warning-sync {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 14px;
+            padding: 12px 14px;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            border-radius: 8px;
+            background: rgba(127, 29, 29, 0.25);
+            color: #fca5a5;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .contest-warning-sync > i {
+            flex-shrink: 0;
+            font-size: 18px;
+            color: #f87171;
+        }
+
+        .contest-warning-sync strong {
+            color: #f87171;
+        }
+
+        .contest-warning-sync div div {
+            margin-top: 2px;
+            color: var(--vscode-foreground);
+            opacity: 0.8;
+        }
+
+        .contest-warning-divider {
+            height: 1px;
+            margin: 14px 0;
+            background: rgba(248, 113, 113, 0.15);
+        }
+
+        .contest-warning-disclaimer {
+            color: var(--vscode-descriptionForeground);
+            display: flex;
+            font-size: 12px;
+            line-height: 1.55;
+        }
 </style>
 </head>
 <body>
@@ -1015,6 +1149,71 @@ const casesHtml = problem.testcases
             <span class="case-count">${total} Test Case${total === 1 ? "" : "s"}</span>
         </div>
     </div>
+    
+    ${problem.isContestProblem && !contestWarningDismissed ?`
+        <div class="contest-warning" id="contest-warning">
+
+            <div class="contest-warning-icon">
+                <i class="codicon codicon-warning"></i>
+            </div>
+
+            <div class="contest-warning-content">
+
+                <div class="contest-warning-header">
+                    <div class="contest-warning-title">
+                        Live Contest Detected
+                    </div>
+
+                    <button
+                        class="contest-warning-close"
+                        type="button"
+                        title="Dismiss warning"
+                        aria-label="Dismiss warning"
+                    >
+                        <i class="codicon codicon-close"></i>
+                    </button>
+                </div>
+
+                <div class="contest-warning-text">
+                    CodeOut is intended primarily for practice and development.
+                    We recommend <strong>not using CodeOut during live or rated
+                    contests</strong>, as using external tools may violate the
+                    platform's contest rules.
+                </div>
+
+                <div class="contest-warning-sync">
+
+                    <i class="codicon codicon-sync-ignored"></i>
+
+                    <div>
+                        <strong>
+                            Auto Sync has been disabled for this contest problem.
+                        </strong>
+
+                        <div>
+                            Manual Sync is still available.
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="contest-warning-divider"></div>
+
+                <div class="contest-warning-disclaimer">
+                <i class="codicon codicon-info"> </i>
+                    <div>
+                    If you choose to use CodeOut during a live contest despite
+                    this warning, you do so at your own risk.
+                    CodeOut is not responsible for any penalties,
+                    disqualifications, account actions, or other consequences
+                    resulting from such use.
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    ` : ""}
 
     <div class="cases">
         ${casesHtml}
@@ -1095,6 +1294,14 @@ const casesHtml = problem.testcases
                     command: "openLink",
                     target: button.getAttribute("data-action")
                 });
+            });
+        });
+        const contestWarningClose =
+            document.querySelector(".contest-warning-close");
+
+        contestWarningClose?.addEventListener("click", () => {
+            vscode.postMessage({
+                command: "dismissContestWarning"
             });
         });
     </script>
