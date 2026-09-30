@@ -183,7 +183,7 @@ export class CodeOutViewProvider implements vscode.WebviewViewProvider {
                     bugs: "https://github.com/Dev-Gaurav-3/CodeOut_VSCode/issues",
                     firefox : "https://addons.mozilla.org/en-US/firefox/addon/codeout/",
                     edge : "https://microsoftedge.microsoft.com/addons/detail/pkpobpaobgnhnnfkpgdepkdadihnpcki",
-                    support:""
+                    support:"https://buymeacoffee.com/itzgaurav0w"
 
                 };
 

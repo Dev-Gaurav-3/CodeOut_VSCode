@@ -61,7 +61,7 @@ function getBottomActions(): string {
                     <span>Edge Add-On</span>
                 </button>
                 <button class="action-button" data-action="support">
-                    <span class="codicon codicon-heart-filled"></span>
+                    <span class="codicon codicon-heart"></span>
                     <span>Support</span>
                 </button>
         </div>
@@ -1009,81 +1009,127 @@ const casesHtml = problem.testcases
     }
         .contest-warning {
             position: relative;
-            display: flex;
-            gap: 16px;
-            margin: 20px 20px;
-            padding: 18px;
+
+            width: calc(100% - 20px);
+            max-width: 520px;
+
+            box-sizing: border-box;
+
+            margin: 10px auto;
+            padding: 16px;
+
             border: 1px solid #ef4444;
             border-radius: 12px;
+
             background: linear-gradient(
                 135deg,
                 rgba(127, 29, 29, 0.35),
                 rgba(69, 10, 10, 0.28)
             );
+
             box-shadow:
                 0 8px 24px rgba(0, 0, 0, 0.25),
                 inset 0 0 24px rgba(239, 68, 68, 0.04);
         }
 
-        .contest-warning-icon {
-            flex-shrink: 0;
-            width: 48px;
-            height: 48px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            background: rgba(239, 68, 68, 0.12);
-            color: #f87171;
-            font-size: 24px;
-        }
+
+        /* Main content */
 
         .contest-warning-content {
-            flex: 1;
+            width: 100%;
             min-width: 0;
         }
+
+
+        /* Header: icon + title + close */
 
         .contest-warning-header {
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            margin-bottom: 8px;
+
+            width: 100%;
+
+            gap: 10px;
+
+            margin-bottom: 12px;
         }
 
-        .contest-warning-title {
-            color: #f87171;
-            font-size: 18px;
-            font-weight: 700;
-        }
 
-        .contest-warning-close {
-            flex-shrink: 0;
+        /* Warning icon */
+
+        .contest-warning-icon {
+            flex: 0 0 auto;
+
             width: 32px;
             height: 32px;
+
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 0;
-            border: 1px solid rgba(248, 113, 113, 0.25);
+
             border-radius: 8px;
-            background: rgba(127, 29, 29, 0.35);
-            color: #d1d5db;
+
+            background: rgba(239, 68, 68, 0.14);
+
+            color: #f87171;
+
+            font-size: 17px;
+        }
+
+
+        /* Heading */
+
+        .contest-warning-title {
+            flex: 1;
+            min-width: 0;
+
+            color: #f87171;
+
+            font-size: 16px;
+            font-weight: 600;
+
+            line-height: 1.3;
+        }
+
+
+        /* Close button */
+
+        .contest-warning-close {
+            flex: 0 0 auto;
+
+            width: 28px;
+            height: 28px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            padding: 0;
+
+            border: none;
+            border-radius: 6px;
+
+            background: transparent;
+
+            color: #999;
+
             cursor: pointer;
-            transition:
-                background 0.15s ease,
-                color 0.15s ease;
         }
 
         .contest-warning-close:hover {
-            background: rgba(239, 68, 68, 0.25);
+            background: rgba(239, 68, 68, 0.18);
             color: #ffffff;
         }
 
+
+        /* Main warning text */
+
         .contest-warning-text {
             color: var(--vscode-foreground);
-            font-size: 13px;
-            line-height: 1.6;
+
+            font-size: 12.5px;
+            line-height: 1.55;
+
             opacity: 0.9;
         }
 
@@ -1091,23 +1137,36 @@ const casesHtml = problem.testcases
             color: #fca5a5;
         }
 
+
+        /* Auto Sync section */
+
         .contest-warning-sync {
             display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-top: 14px;
-            padding: 12px 14px;
+            align-items: flex-start;
+
+            gap: 10px;
+
+            margin-top: 12px;
+            padding: 10px 12px;
+
             border: 1px solid rgba(239, 68, 68, 0.2);
             border-radius: 8px;
+
             background: rgba(127, 29, 29, 0.25);
+
             color: #fca5a5;
-            font-size: 13px;
-            line-height: 1.5;
+
+            font-size: 12px;
+            line-height: 1.45;
         }
 
         .contest-warning-sync > i {
-            flex-shrink: 0;
-            font-size: 18px;
+            flex: 0 0 auto;
+
+            margin-top: 1px;
+
+            font-size: 16px;
+
             color: #f87171;
         }
 
@@ -1117,21 +1176,46 @@ const casesHtml = problem.testcases
 
         .contest-warning-sync div div {
             margin-top: 2px;
+
             color: var(--vscode-foreground);
+
             opacity: 0.8;
         }
 
+
+        /* Divider */
+
         .contest-warning-divider {
             height: 1px;
-            margin: 14px 0;
+
+            margin: 12px 0;
+
             background: rgba(248, 113, 113, 0.15);
         }
 
+
+        /* Disclaimer */
+
         .contest-warning-disclaimer {
-            color: var(--vscode-descriptionForeground);
             display: flex;
-            font-size: 12px;
-            line-height: 1.55;
+            align-items: flex-start;
+
+            gap: 7px;
+
+            color: var(--vscode-descriptionForeground);
+
+            font-size: 11px;
+            line-height: 1.5;
+        }
+
+        .contest-warning-disclaimer > i {
+            flex: 0 0 auto;
+
+            margin-top: 2px;
+
+            color: #f87171;
+
+            font-size: 13px;
         }
 </style>
 </head>
@@ -1151,69 +1235,66 @@ const casesHtml = problem.testcases
     </div>
     
     ${problem.isContestProblem && !contestWarningDismissed ?`
-        <div class="contest-warning" id="contest-warning">
+    <div class="contest-warning" id="contest-warning">
+
+    <div class="contest-warning-content">
+
+        <div class="contest-warning-header">
 
             <div class="contest-warning-icon">
                 <i class="codicon codicon-warning"></i>
             </div>
 
-            <div class="contest-warning-content">
+            <div class="contest-warning-title">
+                Live Contest Detected
+            </div>
 
-                <div class="contest-warning-header">
-                    <div class="contest-warning-title">
-                        Live Contest Detected
-                    </div>
+            <button
+                class="contest-warning-close"
+                type="button"
+                title="Dismiss warning"
+                aria-label="Dismiss warning"
+            >
+                <i class="codicon codicon-close"></i>
+            </button>
 
-                    <button
-                        class="contest-warning-close"
-                        type="button"
-                        title="Dismiss warning"
-                        aria-label="Dismiss warning"
-                    >
-                        <i class="codicon codicon-close"></i>
-                    </button>
-                </div>
+        </div>
 
-                <div class="contest-warning-text">
-                    CodeOut is intended primarily for practice and development.
-                    We recommend <strong>not using CodeOut during live or rated
-                    contests</strong>, as using external tools may violate the
-                    platform's contest rules.
-                </div>
+        <div class="contest-warning-text">
+            CodeOut is intended for practice and development.
+            Using external tools during live or rated contests
+            may violate platform rules.
+        </div>
 
-                <div class="contest-warning-sync">
+        <div class="contest-warning-sync">
 
-                    <i class="codicon codicon-sync-ignored"></i>
+            <i class="codicon codicon-sync-ignored"></i>
 
-                    <div>
-                        <strong>
-                            Auto Sync has been disabled for this contest problem.
-                        </strong>
-
-                        <div>
-                            Manual Sync is still available.
-                        </div>
-                    </div>
-
-                </div>
-
-                <div class="contest-warning-divider"></div>
-
-                <div class="contest-warning-disclaimer">
-                <i class="codicon codicon-info"> </i>
-                    <div>
-                    If you choose to use CodeOut during a live contest despite
-                    this warning, you do so at your own risk.
-                    CodeOut is not responsible for any penalties,
-                    disqualifications, account actions, or other consequences
-                    resulting from such use.
-                    </div>
-                </div>
-
+            <div>
+                <strong>Auto Sync is disabled.</strong>
+                <div>Manual Sync is still available.</div>
             </div>
 
         </div>
-    ` : ""}
+
+        <div class="contest-warning-divider"></div>
+
+        <div class="contest-warning-disclaimer">
+
+            <i class="codicon codicon-info"></i>
+
+            <div>
+                Use during live contests is at your own risk.
+                CodeOut is not responsible for penalties,
+                disqualification, or account actions.
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+` : ""}
 
     <div class="cases">
         ${casesHtml}
